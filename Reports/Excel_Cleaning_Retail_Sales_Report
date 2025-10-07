@@ -1,0 +1,239 @@
+Excel Cleaning Report — Retail Sales Data (Jan 2023 - Dec 
+2024) 
+ 
+Generated on: 2025-10-07 10:40:18 
+Prepared by: Vaibhav Chougule 
+Dataset: Retail Sales (1500 rows; Orders between 2023-01-01 and 2024-12-31) 
+ 
+ 
+Background of Study 
+Companies collect transactional sales data from multiple sources (POS, e-commerce, ERPs). 
+Such raw data often contains inconsistencies, missing values, mixed formats and noise. 
+Before performing any analysis—trend detection, dashboarding or modeling—the raw data 
+must be cleaned and validated. This document describes the Excel-based cleaning process 
+applied to a sample retail sales dataset covering January 1, 2023 through December 31, 
+2024 (1500 rows). The goal was to transform messy, real-world data into an analysis-ready 
+dataset while documenting every change for reproducibility and client trust. 
+ 
+Aim of Study 
+The primary aim of this cleaning project was to convert the raw retail sales dataset into a 
+clean, consistent and validated Excel file suitable for analysis and dashboarding. Specific 
+objectives include: 
+ - Identify and document data quality issues (missing data, inconsistent formats, 
+duplicates, outliers). 
+ - Apply conservative and explainable imputation methods where necessary, while 
+retaining provenance (imputation flags). 
+ - Standardize categorical values and data types for accurate aggregation and joins. 
+ - Create derived features to support downstream analysis and Power BI dashboarding. 
+ 
+About the Dataset 
+Key facts about the dataset: 
+ - Period: 1 January 2023 to 31 December 2024 
+ - Rows: 1500 (transaction-level / line items) 
+ - Typical columns: Order_ID, Order_Date, Ship_Date, Ship_Mode, Customer_ID, 
+Customer_Name, Segment, Country, City, State, Postal_Code, Region, Product_ID, 
+Category, Sub_Category, Product_Name, Sales, Quantity, Discount, Profit 
+The dataset originally contained the following missing-value counts identified during 
+profiling: 
+Column Missing Count (initial) 
+Customer_ID 30 
+Product_ID 34 
+Sales 11 
+Quantity 15 
+Discount 18 
+Profit 12 
+Ship_Date 26 
+ 
+Tools and Techniques Used 
+Primary tools and Excel features used in this cleaning project: 
+ - Microsoft Excel (desktop) — formulas, formatting, and tables. 
+ - Power Query (Get & Transform) — reproducible import, type conversion, trimming 
+and step logging. 
+ - Key Excel formulas: TRIM, CLEAN, SUBSTITUTE, MEDIAN, IF, ISBLANK, COUNTBLANK, 
+TEXT, DATEVALUE, VALUE. 
+ - Excel features: Ctrl+G (Go To Special → Blanks), Conditional Formatting, Remove 
+Duplicates, PivotTables, Text to Columns, Paste Special, Format Cells, Data Validation. 
+ - Documentation: change log sheet, imputation flag columns, data dictionary (columns + 
+description). 
+ 
+Step-by-Step Cleaning Process (Detailed) 
+1. Backup Original File 
+What: Save an untouched copy of the raw dataset before any modification. 
+Why: Prevents accidental data loss and provides a rollback point. 
+How (Excel): File → Save As → Retail_Sales_Raw_backup.xlsx. Work on a copy named 
+Retail_Sales_Work.xlsx. 
+Benefit: Ensures reproducibility and auditability. 
+2. Inspect (shape, head, missing %) 
+What: Quick data profiling to understand size, sample records, data types and missingness. 
+Why: Guides priorities for cleaning and sets expectations. 
+How (Excel): Open sheet, use COUNTA/ROWS/COLUMNS or Excel Status Bar for count. Use 
+conditional formatting and COUNTBLANK(range) per column. Use PivotTables to inspect 
+categories and ranges. 
+Benefit: Identifies problem columns early and estimates effort required. 
+3. Standardize Column Names 
+What: Rename columns consistently (snake_case or Title Case). 
+Why: Clean names improve readability and avoid errors during automation, imports and 
+scripting. 
+How (Excel): Edit header row cells or use Power Query: Transform → Use First Row as 
+Headers → Rename columns: order_id, order_date, ship_date, etc. 
+Benefit: Consistent column naming reduces mistakes when writing formulas, DAX or code. 
+4. Trim & Clean Text Columns 
+What: Remove leading/trailing spaces and hidden non-printable characters from text fields. 
+Why: Invisible characters cause false duplicates and grouping errors (e.g., 'Claire ' ≠ 
+'Claire'). 
+How (Excel formulas): 
+ - Helper column formula: =TRIM(CLEAN(SUBSTITUTE(E2,CHAR(160),""))) 
+ - Fill down and Paste Special → Values back into original column. 
+ - Alternatively use Power Query: Transform → Format → Trim and Clean. 
+Benefit: Ensures exact matches for joins and grouping; fixes Ctrl+G blank-detection issues. 
+5. Parse Dates & Convert Numerics 
+What: Convert date-like columns into Excel Date type and numeric columns into numbers. 
+Why: Proper types are required for arithmetic, sorting, date functions, and charts. 
+How (Excel): 
+ - For mixed date formats: =DATEVALUE(SUBSTITUTE(A2,"-","/")) or use Power Query 
+to change type using locale. 
+ - For numerics stored as text: use VALUE(SUBSTITUTE(...)) or Text to Columns trick. 
+Benefit: Enables accurate calculations (ship lag, month grouping, sums, averages). 
+6. Flag Missing Values and Create Imputed Flag Columns 
+What: For every column where imputation is possible, create a flag column that records if 
+the value was originally missing. 
+Why: Flags preserve provenance and transparency for clients and future reviewers. 
+How (Excel): 
+ - Add columns e.g., sales_missing_flag with formula: =IF(ISBLANK(Q2),1,0) 
+ - Use COUNTIF on flags to log imputed counts into ChangeLog. 
+Benefit: Maintains traceability and allows filtering to inspect imputed rows. 
+7. Detect Duplicates and Mark (Don’t Delete Immediately) 
+What: Identify exact duplicates and duplicates by business keys (e.g., order_id + product_id 
++ order_date). 
+Why: Duplicates can distort aggregates; but some repeated order_ids can be legitimate (line 
+items), so do not delete without inspection. 
+How (Excel): 
+ - Use Conditional Formatting → Duplicate Values for quick scan. 
+ - Create a helper key column: =order_id & "|" & product_id & "|" & 
+TEXT(order_date,"yyyy-mm-dd") and use COUNTIF(key_range,key_cell). 
+ - Create duplicate_flag = IF(COUNTIF(key_range,key_cell)>1,1,0). 
+Benefit: Ensures correct totals and removes accidental double-records only after manual 
+review. 
+8. Standardize Categories 
+What: Normalize categorical column values (Ship_Mode, Category, Sub_Category, State, 
+Postal_Code formatting). 
+Why: Different spellings or formats split groups and misrepresent group totals. 
+How (Excel): 
+ - Use Find & Replace to correct common variants (e.g., 'Std' -> 'Standard Class'). 
+ - Postal code correction: use =TEXT(L2,"000000") for 6-digit standardization or manual 
+correction based on city/state. 
+Benefit: Ensures accurate grouping and that maps/pivots aggregate correctly. 
+9. Validate Business Rules 
+What: Validate logical constraints such as Ship_Date >= Order_Date and Sales ≥ 0. 
+Why: Ensures records reflect real-world processes and detects entry errors. 
+How (Excel): 
+ - Add helper: ship_lag_days = =[@Ship_Date]-[@Order_Date], then filter ship_lag_days < 
+0. 
+ - Use formulas: =IF(OR(Sales<=0,Quantity<=0),"Check","OK"). 
+Benefit: Catches impossible or suspicious records for correction before analysis. 
+10. Handle Missing Values and Impute Conservatively 
+What: Apply conservative, explainable imputation rules and record them. 
+Why: Preserves dataset size for analysis while maintaining transparency. 
+How (Imputation rules used in this project): 
+ - Customer_ID: fill with 'Unknown' 
+ - Product_ID: fill with 'MissingProduct' 
+ - Discount: fill with 0 
+ - Sales: fill with MEDIAN(sales_range) using =MEDIAN(Q2:Q1501) 
+ - Quantity: fill with ROUND(MEDIAN(quantity_range),0) 
+ - Profit: compute median profit margin = MEDIAN(IF(sales<>0,profit/sales)), then profit 
+= median_margin * sales for missing profits 
+ - Ship_Date: impute as Order_Date + median shipping lag (calculated per ship_mode if 
+available), and flag ship_date_imputed_flag 
+ 
+Excel mechanics: 
+ - Use Ctrl+G → Special → Blanks to select blanks and paste formulas like =$AE$1 
+(median) then Paste Special → Values. 
+ - Create imputation flag columns before filling: e.g., sales_imputed_flag = 
+IF(ISBLANK(Q2),1,0). 
+Benefit: Imputation provides plausible values while preserving ability to filter and audit 
+imputed rows. 
+11. Detect & Flag Outliers 
+What: Identify profit outliers using the IQR method and flag them for review. 
+Why: Outliers can distort averages and model training. 
+How (Excel): 
+ - Calculate Q1 and Q3: =QUARTILE.INC(T2:T1501,1) and =QUARTILE.INC(T2:T1501,3) 
+ - IQR = Q3 - Q1. Bounds: Lower = Q1 - 1.5*IQR, Upper = Q3 + 1.5*IQR 
+ - Flag: =IF(OR(T2<Lower,T2>Upper),"Outlier","Normal"). 
+Benefit: Enables focused inspection and informed decisions (cap, remove or retain) on 
+extreme profit values. 
+12. Create Derived Columns (Feature Engineering) 
+What: Add new columns that make analysis easier and richer. 
+Why: Derived features support segmentation, trend analysis and advanced visuals. 
+How (Excel formulas examples): 
+ - order_year: =YEAR(order_date) 
+ - order_month: =TEXT(order_date,"yyyy-mm") 
+ - processing_days: =ship_date - order_date 
+ - profit_margin: =IF(sales=0,NA(),profit/sales) 
+ - sales_per_unit: =sales/quantity 
+ - discount_band: =IF(discount=0,"0%",IF(discount<=0.1,"1-10%",IF(discount<=0.2,"11
+20%","21%+"))) 
+ - high_value_flag: =IF(sales>5000,"High","Regular") 
+Benefit: Feature columns speed up pivoting, filtering and plotting; they are inputs to 
+dashboards and models. 
+13. Reconcile Totals and Sanity-Check Results 
+What: Compare sums and counts before and after cleaning and ensure consistency. 
+Why: Confirms no accidental row deletion and verifies aggregates are within expected 
+ranges. 
+How (Excel): 
+ - Compare SUM(Sales) before vs after and verify Orders count = 1500. 
+ - Use PivotTables to compare totals by Month/Region and spot unexpected changes. 
+Benefit: Validates cleaning work and builds confidence in downstream analysis. 
+14. Save Cleaned File and Document Steps 
+What: Save final cleaned workbook and record all changes in a ChangeLog sheet. 
+Why: Ensures reproducibility, audit trail and client-ready deliverable. 
+How (Excel): 
+ - Save as Retail_Sales_Clean_v1.xlsx and include a sheet named ChangeLog with columns 
+Date, Step, Column, MissingBefore, Method, ImputedCount, Notes. 
+ - Keep flags and derived columns in the file for transparency. 
+Benefit: Final deliverable is ready for Power BI dashboarding and modeling; client can 
+review the change log. 
+ 
+Change Log (Sample Entries) 
+Date Step Column Missing 
+Before 
+Method Notes 
+2025
+10-07 
+Impute Customer_ID 30 Fill 'Unknown' Flag: 
+customer_id_imputed_flag 
+2025
+10-07 
+Impute Product_ID 34 Fill 
+'MissingProduct' 
+Flag: 
+product_id_imputed_flag 
+2025
+10-07 
+Impute Sales 11 Fill median Flag: sales_imputed_flag 
+2025
+10-07 
+Impute Ship_Date 26 OrderDate + 
+median lag by 
+ship_mode 
+Flag: 
+ship_date_imputed_flag 
+ 
+Appendix: Key Excel Formulas & Shortcuts 
+Common formulas used in this project: 
+Trim + Clean + Substitute (remove non-breaking spaces): 
+=TRIM(CLEAN(SUBSTITUTE(A2,CHAR(160),""))) 
+Median (ignore blanks): =MEDIAN(Q2:Q1501) 
+COUNTBLANK: =COUNTBLANK(range) 
+IQR bounds: Q1 = QUARTILE.INC(range,1); Q3 = QUARTILE.INC(range,3); IQR = Q3-Q1 
+Impute with median (using blanks selection): Select blanks → type =$AE$1 → Ctrl+Enter 
+→ Paste Special → Values 
+Profit margin: =IF(Sales=0,NA(), Profit/Sales) 
+Useful shortcuts: Ctrl+G → Special → Blanks; Ctrl+Enter ( ill selected blanks); Alt+H+V+S 
+(Paste Special). 
+ 
+Next Steps & Recommendations - Use this cleaned dataset to build the Power BI dashboard (dashboard guide created 
+separately). - Retain imputation flags and change log in the deliverable so the client can review all 
+changes. - If the dataset will be refreshed regularly, move reproducible steps into Power Query and 
+save the query steps for scheduled refresh. 
+- For statistical modeling, consider additional feature engineering and handling profit 
+outliers with domain-informed corrections. 
