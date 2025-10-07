@@ -1,0 +1,95 @@
+# DATA CLEANING STEPS (EXCEL FORMULAS & ACTIONS)
+# Project: Retail Sales Data Cleaning (2023–2024)
+# Author: Vaibhav Chougule
+
+---------------------------------------------------
+1️⃣ BACKUP ORIGINAL FILE
+---------------------------------------------------
+- Created a copy of raw data file: raw_sales_data.xlsx → backup_raw_sales_data.xlsx
+
+---------------------------------------------------
+2️⃣ INSPECT DATA (SHAPE, HEAD, MISSING VALUES)
+---------------------------------------------------
+- Used COUNT, COUNTA, and COUNTBLANK formulas to check data completeness.
+Example:
+  =COUNTA(A:A)
+  =COUNTBLANK(A:A)
+
+---------------------------------------------------
+3️⃣ STANDARDIZE COLUMN NAMES
+---------------------------------------------------
+- Converted all headers to lowercase, replaced spaces with underscores using Excel Rename feature or Power Query.
+
+---------------------------------------------------
+4️⃣ CLEAN TEXT COLUMNS
+---------------------------------------------------
+Applied formulas:
+  =TRIM(A2)
+  =CLEAN(A2)
+  =PROPER(A2)
+Used Find & Replace to fix unwanted characters.
+
+---------------------------------------------------
+5️⃣ PARSE DATES & CONVERT NUMERICS
+---------------------------------------------------
+- Converted order_date and ship_date columns to Excel Date format (Ctrl+1 → Date)
+- Converted sales, quantity, discount, and profit to numeric.
+
+---------------------------------------------------
+6️⃣ HANDLE MISSING VALUES
+---------------------------------------------------
+- Found missing cells: Go To Special → Blanks
+- Filled with logical replacements (e.g., average, mode, or "Unknown")
+- Added flag columns (e.g., Missing_Sales = IF(ISBLANK(Sales),1,0))
+
+---------------------------------------------------
+7️⃣ DETECT DUPLICATES
+---------------------------------------------------
+- Used Conditional Formatting → Duplicate Values
+- Also used formula:
+  =COUNTIF(A:A,A2)>1
+
+---------------------------------------------------
+8️⃣ STANDARDIZE CATEGORIES
+---------------------------------------------------
+- Ensured consistent casing (e.g., "Corporate", not "corporate")
+- Verified postal codes are 6-digit numbers (LEN check)
+  =LEN(E2)
+
+---------------------------------------------------
+9️⃣ VALIDATE BUSINESS LOGIC
+---------------------------------------------------
+- Checked if Ship Date ≥ Order Date:
+  =IF(Ship_Date<Order_Date,"Error","OK")
+- Ensured Sales ≥ 0:
+  =IF(Sales<0,"Error","OK")
+
+---------------------------------------------------
+10️⃣ DETECT OUTLIERS (PROFIT COLUMN)
+---------------------------------------------------
+- Calculated Q1, Q3, and IQR:
+  =QUARTILE.INC(R:R,1)
+  =QUARTILE.INC(R:R,3)
+  =Q3-Q1
+- Flagged outliers:
+  =IF(OR(R2<Lower_Bound,R2>Upper_Bound),"Outlier","Normal")
+
+---------------------------------------------------
+11️⃣ FEATURE ENGINEERING
+---------------------------------------------------
+Created new columns:
+- Profit Margin = Profit / Sales
+- Sales per Quantity = Sales / Quantity
+
+---------------------------------------------------
+12️⃣ FINAL VALIDATION
+---------------------------------------------------
+- Used SUM and COUNT to reconcile totals
+- Verified totals matched the source
+- Ensured no blanks or invalid entries
+
+---------------------------------------------------
+13️⃣ EXPORT CLEAN DATA
+---------------------------------------------------
+- Saved final file: cleaned_sales_data.xlsx
+- Documented all cleaning steps in Excel_Cleaning_Retail_Sales_Report.docx
